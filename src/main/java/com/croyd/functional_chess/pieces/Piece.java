@@ -1,5 +1,6 @@
 package com.croyd.functional_chess.pieces;
 
+import com.croyd.functional_chess.Board;
 import com.croyd.functional_chess.Stack;
 
 public abstract class Piece {
@@ -14,7 +15,9 @@ public abstract class Piece {
 		this.COORDINATES = coordinates;
 	}
 
-	public abstract boolean moveValidation(int x, int y, Stack<Piece> pieces);
+	public abstract boolean moveValidation(final int x, final int y, final Board board);
+	
+	public abstract Stack<Coordinates> getAttackFields(final Board board);
 	
 	@Override
 	public abstract String toString();
@@ -23,7 +26,9 @@ public abstract class Piece {
 		return this.COLOR;
 	}
 
-	protected Coordinates getCoordinates() {
+	public Coordinates getCoordinates() {
 		return this.COORDINATES;
 	}
+	
+	public abstract Piece move(final Coordinates coordinates);
 }

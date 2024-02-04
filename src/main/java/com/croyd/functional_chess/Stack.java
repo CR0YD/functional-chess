@@ -6,7 +6,7 @@ import java.util.function.Function;
 import com.croyd.functional_chess.TailCalls.TailCall;
 
 public class Stack<T> {
-
+	
 	private final Optional<Element<T>> HEAD;
 
 	public Stack() {
@@ -51,7 +51,7 @@ public class Stack<T> {
 		if (base.contains(stack.first().get()))
 			return TailCalls.call(filterDuplicateElements(stack.remove(), base, result));
 
-		return TailCalls.call(filterDuplicateElements(stack.remove(), base, result.add(stack)));
+		return TailCalls.call(filterDuplicateElements(stack.remove(), base, result.add(stack.first().get())));
 	}
 
 	private TailCall<Stack<T>> mergeStacks(final Stack<T> stack, final Stack<T> result) {
@@ -76,8 +76,12 @@ public class Stack<T> {
 		return filterStack(this.invert(), filter, value, new Stack<T>()).invoke();
 	}
 
-	private <K> TailCall<Stack<T>> filterStack(final Stack<T> stack, final Function<T, K> filter, final K value,
-			final Stack<T> result) {
+	private <K> TailCall<Stack<T>> filterStack(
+		final Stack<T> stack,
+		final Function<T, K> filter,
+		final K value,
+		final Stack<T> result
+	) {
 		if (stack.isEmpty())
 			return TailCalls.done(result);
 
@@ -91,13 +95,92 @@ public class Stack<T> {
 		return filterStack(filter, values, new Stack<T>()).invoke();
 	}
 
-	private <K> TailCall<Stack<T>> filterStack(final Function<T, K> filter, final Stack<K> values,
-			final Stack<T> result) {
+	private <K> TailCall<Stack<T>> filterStack(
+		final Function<T, K> filter,
+		final Stack<K> values,
+		final Stack<T> result
+	) {
 		if (values.isEmpty())
 			return TailCalls.done(result);
 
-		return TailCalls.call(filterStack(filter, values.remove(),
-				result.add(this.invert().filter(filter, values.first().get()), true)));
+		return TailCalls.call(
+			filterStack(
+				filter,
+				values.remove(),
+				result.add(this.invert().filter(filter, values.first().get()), true)
+			)
+		);
+	}
+	
+	private <K> Stack<T> filter(final Function<T, K> filter, final K value, final boolean equals) {
+		return filterStack(this.invert(), filter, value, equals, new Stack<T>()).invoke();
+	}
+
+	private <K> TailCall<Stack<T>> filterStack(
+		final Stack<T> stack,
+		final Function<T, K> filter,
+		final K value,
+		final boolean equals,
+		final Stack<T> result
+	) {
+		if (stack.isEmpty())
+			return TailCalls.done(result);
+
+		if (equals && value.equals(filter.apply(stack.first().get())))
+			return TailCalls.call(filterStack(stack.remove(), filter, value, equals, result.add(stack.first().get())));
+
+		if (!equals && !value.equals(filter.apply(stack.first().get())))
+			return TailCalls.call(filterStack(stack.remove(), filter, value, equals, result.add(stack.first().get())));
+
+		return TailCalls.call(filterStack(stack.remove(), filter, value, equals, result));
+	}
+	
+	public <K> Stack<T> filter(final Function<T, K> filter, final Stack<K> values, final boolean equals) {
+		return filterStack(filter, values, equals, new Stack<T>()).invoke();
+	}
+
+	private <K> TailCall<Stack<T>> filterStack(
+		final Function<T, K> filter,
+		final Stack<K> values,
+		final boolean equals,
+		final Stack<T> result
+	) {
+		if (values.isEmpty())
+			return TailCalls.done(result);
+
+		return TailCalls.call(
+			filterStack(
+				filter,
+				values.remove(),
+				equals,
+				result.add(this.invert().filter(filter, values.first().get(), equals), true)
+			)
+		);
+	}
+	
+	public Stack<T> replace(final T oldValue, final T newValue) {
+		return replaceInStack(this.invert(), oldValue, newValue, new Stack<T>()).invoke();
+	}
+	
+	private TailCall<Stack<T>> replaceInStack(final Stack<T> stack, final T oldValue, final T newValue, final Stack<T> result) {
+		if (stack.isEmpty())
+			return TailCalls.done(result);
+
+		if (stack.first().get().equals(oldValue))
+			return TailCalls.call(replaceInStack(stack.remove(), oldValue, newValue, result.add(newValue)));
+
+		return TailCalls.call(replaceInStack(stack.remove(), oldValue, newValue, result.add(stack.first().get())));
+	}
+	
+	public <K> Stack<K> map(final Function<T, K> function) {
+		return mapCall(this.invert(), function, new Stack<K>()).invoke();
+	}
+	
+	private <K> TailCall<Stack<K>> mapCall(final Stack<T> stack, final Function<T, K> function, final Stack<K> result) {
+		if (stack.isEmpty())
+			return TailCalls.done(result);
+		
+		return TailCalls.call(mapCall(stack.remove(), function, result.add(function.apply(stack.first().get()))));
 	}
 
 	public boolean contains(final T value) {
